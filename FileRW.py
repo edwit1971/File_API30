@@ -34,6 +34,7 @@ if platform == 'android':
     Uri = autoclass('android.net.Uri')
     File = autoclass('java.io.File')
     Env = autoclass('android.os.Environment')
+    FileOutputStream = autoclass('java.io.FileOutputStream')
     
     MediaStore_Images_Media_DATA = "_data"  # Value of MediaStore.Images.Media.DATA
     
