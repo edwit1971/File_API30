@@ -17,6 +17,7 @@ import json
 
 from kivy.utils import platform
 
+Global_Label = None
 
 ####################################################
 ####################################################
@@ -80,13 +81,15 @@ if platform == 'android':
 ################################################
 
 def Read_File(pFile=None, pLabel=None):
-    String = 'Read_File\nNot Functional Yet'
+    String = 'Read_File()\n\nNot Functional Yet'
     if platform == 'android':
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
         # if permissions_granted:   # variant
-            OFC_Read_Doc(Callback_Read)
+            OFC_Read_Doc(pRCallback = Callback_Read, \
+                         pFile = pFile, \
+                         pLabel = pLabel)
             if(pLabel != None):
                 pLabel.text = ''
         else:
@@ -94,13 +97,15 @@ def Read_File(pFile=None, pLabel=None):
     return String
 
 
-def Write_File(pSource=None, pDest=None):
+def Write_File(pFile=None, pLabel=None):
     if platform == 'android':
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
         # if permissions_granted:   # variant
-            OFC_Write_Doc(Callback_Write)
+            OFC_Write_Doc(pWCallback = Callback_Write, \
+                          pFile = pFile, \
+                          pLabel = pLabel)
         else:
             get_permissions()
 
@@ -110,7 +115,9 @@ def Write_File(pSource=None, pDest=None):
 # absolute filepath of document user selected.
 # None if user canceled.
 ####################################################
-def OFC_Read_Doc(pRCallback):
+def OFC_Read_Doc(pRCallback=None, pFile=None, pLabel=None):
+    global Global_Label
+    Global_Label = pLabel
     if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         context = cast('android.content.ContextWrapper', currentActivity.getApplicationContext())
@@ -142,7 +149,7 @@ def OFC_Read_Doc(pRCallback):
             docPath = cursor.getString(columnIndex);
             cursor.close();
             Logger.info('android_ui: OFC_Read_Doc() selected %s', docPath)
-
+            
             Clock.schedule_once(lambda dt: pRCallback(docPath), 0)
             return
 
@@ -158,6 +165,11 @@ def OFC_Read_Doc(pRCallback):
 
 ####################################################
 def Callback_Read(filename):
+    try:
+        global Global_Label
+        Global_Label.text = filename
+    except:
+        pass
     with io.open(filename, encoding='utf-8') as file:
         data = None
         try:
@@ -168,7 +180,7 @@ def Callback_Read(filename):
     
 
 ####################################################
-def OFC_Write_Doc(pWCallback):
+def OFC_Write_Doc(pWCallback=None, pFile=None, pLabel=None):
     if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         
@@ -261,4 +273,14 @@ def Read_BinaryFile(pData = None):
 
 ####################################################
 ####################################################
+
+String_Data  = 'There is in certain living souls,\n'
+String_Data += 'a quality of loneliness unspeakable,\n'
+String_Data += 'so great it must be shared,\n'
+String_Data += 'as company is shared by lesser beings,\n'
+String_Data += 'such a loneliness is mine.\n'
+String_Data += 'So know by this,\n'
+String_Data += 'that in immensity,\n'
+String_Data += 'there is one lonelier than you.\n\n'
+String_Data += 'by Theodore Sturgeon'
 

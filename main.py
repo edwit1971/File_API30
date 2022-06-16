@@ -44,10 +44,9 @@ class LayoutsApp(MDApp):
         self.B_Read     = Button()
         self.B_Write    = Button()
         self.Draw_Lines = DrawStuff()
-        self.File1Name  = 'loneliness.txt'
-        self.File2Name  = 'File_API30.txt'
-        self.Path2Name  = ''
-        self.strFP2     = ''
+        self.FileName   = 'File_API30.txt'
+        self.PathName   = ''
+        self.strFPName  = ''
         return
     
     
@@ -57,9 +56,10 @@ class LayoutsApp(MDApp):
         ############################################
         if(platform == 'android'):
             from android.storage import primary_external_storage_path
-            self.Path2Name = primary_external_storage_path()
+            self.PathName = primary_external_storage_path()
             
-        self.strFP2 = os.path.join(self.Path2Name, self.File2Name)
+        self.PathName  = os.path.join(self.PathName, 'Download')
+        self.strFPName = os.path.join(self.PathName, self.FileName)
         ############################################
         self.Main_Win.size = Window.size
         Screen_Width  = self.Main_Win.width
@@ -125,7 +125,7 @@ class LayoutsApp(MDApp):
         self.LText.valign     = 'center'
         self.LText.theme_text_color = 'Custom'
         self.LText.color      = (0, 0, 0, 1)
-        self.LText.text  = ''
+        self.LText.text = self.strFPName
         if(self.LText.parent == None):
             self.Main_Win.add_widget(self.LText)
         ############################################
@@ -137,35 +137,29 @@ class LayoutsApp(MDApp):
         ############################
         # Does File2
         # /Download/File_API30.txt Exist
-        if(os.path.isfile(self.strFP2)):
+        if(os.path.isfile(self.strFPName)):
             if(platform == 'android'):
                 ############################
                 # Read File
-                str = RW.Read_File(self.strFP2, self.LText)
+                RW.Read_File(pFile=self.strFPName, pLabel=self.LText)
                 ############################
                 # Display File
-                self.LText.text = str
+                #self.LText.text = str
             else:
                 self.LText.text  = 'Press_Read()\n\nNot Android Device'
         else:
-            self.LText.text  = 'Press_Read()\n\nFile Not Found\n\n' + self.strFP2
+            self.LText.text  = 'Press_Read()\n\nFile Not Found\n\n' + self.strFPName
         return
     
     
     ################################################
     def Press_Write(self, instance):
-        ############################
-        # Does File1
-        # (loneliness.txt) Exist
-        if(os.path.isfile(self.File1Name)):
-            if(platform == 'android'):
-                ############################
-                # Save File1 to Download Folder
-                RW.Write_File(self.File1Name, self.strFP2)
-            else:
-                self.LText.text  = 'Press_Write()\n\nNot Android Device'
+        if(platform == 'android'):
+            ############################
+            # Save File1 to Download Folder
+            RW.Write_File(pFile=self.strFPName, pLabel=self.LText)
         else:
-            self.LText.text  = 'Press_Write()\n\nFile Not Found\n\n' + self.File1Name
+            self.LText.text  = 'Press_Write()\n\nNot Android Device'
         return
 
 
