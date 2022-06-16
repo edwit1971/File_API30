@@ -79,19 +79,22 @@ if platform == 'android':
 ################################################
 ################################################
 
-
-def Read_File():
+def Read_File(pFile=None, pLabel=None):
+    String = 'Read_File\nNot Functional Yet'
     if platform == 'android':
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
         # if permissions_granted:   # variant
             OFC_Read_Doc(Callback_Read)
+            if(pLabel != None):
+                pLabel.text = ''
         else:
             get_permissions()
+    return String
 
 
-def Write_File():
+def Write_File(pSource=None, pDest=None):
     if platform == 'android':
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
