@@ -11,6 +11,7 @@
 #
 ##############################################################
 
+import os
 
 from kivymd.app import MDApp
 
@@ -26,8 +27,6 @@ from Misc_DrawStuff import DrawStuff
 from kivy.utils import platform
 
 import FileRW as RW
-
-import os
 
 
 ##############################################################
@@ -57,9 +56,9 @@ class LayoutsApp(MDApp):
         self.Draw_Lines.Show_Instructions(self.Main_Win)
         ############################################
         if(platform == 'android'):
-            import Permissions
-            self.Path2Name = Permissions.Get_Internal_Path()
-        
+            from android.storage import primary_external_storage_path
+            self.Path2Name = primary_external_storage_path()
+            
         self.strFP2 = os.path.join(self.Path2Name, self.File2Name)
         ############################################
         self.Main_Win.size = Window.size
