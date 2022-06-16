@@ -5,6 +5,25 @@
 # All the Functions needed to Read and Write a File
 # on an Android device running API30+
 #
+#
+# Using ADB Shell
+#
+# 1) connect device via USB
+# 2) adb start-server : also adb kill-server when needed
+# 3) adb devices -l : lists devices connected
+#
+# 4) install manually or use adb
+# 4) adb -s <device> install File_API30.apk : must be inside BIN folder
+#
+# 5) launch File_API30.apk manually on device
+# 6) adb shell pidof com.handgems.file_api30 : all lowercase
+# 7) adb logcat --pid=<pid>
+# 8) ctrl-c to break
+#
+#
+# adb shell ps : show all processes running
+# adb logcat : to get entire logcat
+#
 ##############################################################
 
 
@@ -40,12 +59,14 @@ if platform == 'android':
     MediaStore_Images_Media_DATA = "_data"  # Value of MediaStore.Images.Media.DATA
     
     def permissions_callback(permissions, results):
+        Logger.info('***FILE_API30*** : def permissions_callback()...')
         if all([res for res in results]):
             permissions_granted = True
         else:
             permissions_granted = False
     
     def get_permissions():
+        Logger.info('***FILE_API30*** : def get_permissions()...')
         request_permissions([
             Permission.WRITE_EXTERNAL_STORAGE,
             Permission.READ_EXTERNAL_STORAGE,
@@ -82,7 +103,8 @@ if platform == 'android':
 
 def Read_File(pFile=None, pLabel=None):
     String = 'Read_File()\n\nNot Functional Yet'
-    if platform == 'android':
+    if(platform == 'android'):
+        Logger.info('***FILE_API30*** : def Read_File()...start')
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
@@ -94,11 +116,13 @@ def Read_File(pFile=None, pLabel=None):
                 pLabel.text = ''
         else:
             get_permissions()
+        Logger.info('***FILE_API30*** : def Read_File()...end')
     return String
 
 
 def Write_File(pFile=None, pLabel=None):
-    if platform == 'android':
+    if(platform == 'android'):
+        Logger.info('***FILE_API30*** : def Write_File()...start')
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
@@ -108,6 +132,8 @@ def Write_File(pFile=None, pLabel=None):
                           pLabel = pLabel)
         else:
             get_permissions()
+        Logger.info('***FILE_API30*** : def Write_File()...end')
+    return
 
 
 ####################################################
@@ -116,17 +142,17 @@ def Write_File(pFile=None, pLabel=None):
 # None if user canceled.
 ####################################################
 def OFC_Read_Doc(pRCallback=None, pFile=None, pLabel=None):
-    global Global_Label
-    Global_Label = pLabel
     if(platform == 'android'):
+        Logger.info('***FILE_API30*** : def OFC_Read_Doc()...start')
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         context = cast('android.content.ContextWrapper', currentActivity.getApplicationContext())
         file_p = cast('java.io.File', context.getExternalFilesDir(Env.DIRECTORY_DOCUMENTS))
         
         ##########################################################
         def on_activity_result(request_code, result_code, intent):
+            Logger.info('***FILE_API30*** : def on_activity_result()...start')
             if request_code != RESULT_LOAD_DOC:
-                Logger.warning('OFC_Read_Doc: ignoring activity result that was not RESULT_LOAD_DOC')
+                Logger.warning('on_activity_result: ignoring activity result that was not RESULT_LOAD_DOC')
                 return
 
             if result_code == Activity.RESULT_CANCELED:
@@ -148,9 +174,11 @@ def OFC_Read_Doc(pRCallback=None, pFile=None, pLabel=None):
             # String
             docPath = cursor.getString(columnIndex);
             cursor.close();
-            Logger.info('android_ui: OFC_Read_Doc() selected %s', docPath)
+            Logger.info('***FILE_API30*** : on_activity_result() : selected %s', docPath)
+            Logger.info('***FILE_API30*** : on_activity_result() : selected %s', str(docPath))
             
             Clock.schedule_once(lambda dt: pRCallback(docPath), 0)
+            Logger.info('***FILE_API30*** : def on_activity_result()...end')
             return
 
         activity.bind(on_activity_result = on_activity_result)
@@ -160,34 +188,40 @@ def OFC_Read_Doc(pRCallback=None, pFile=None, pLabel=None):
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, False)
         intent.setAction(Intent.ACTION_GET_CONTENT)
         currentActivity.startActivityForResult(intent, RESULT_LOAD_DOC)
-        return
+        Logger.info('***FILE_API30*** : def OFC_Read_Doc()...end')
+    return
 
 
 ####################################################
 def Callback_Read(filename):
-    try:
-        global Global_Label
-        Global_Label.text = filename
-    except:
-        pass
-    with io.open(filename, encoding='utf-8') as file:
-        data = None
-        try:
-            data = json.load(file)
-        except:
-            # print('JSON not loaded')
-            return False
+    if(filename != None):
+        if(platform == 'android'):
+            Logger.info('***FILE_API30*** : def Callback_Read()...start')
+            Logger.info('***FILE_API30*** : filename = %s', str(filename))
+            with io.open(filename, encoding='utf-8') as file:
+                data = None
+                try:
+                    Logger.info('***FILE_API30*** : data = json.load(file)')
+                    data = json.load(file)
+                except:
+                    Logger.info('***FILE_API30*** : ERROR data = json.load(file)')
+            Logger.info('***FILE_API30*** : def Callback_Read()...end')
+    else:
+        Logger.info('***FILE_API30*** : filename = NONE')
+    return
     
 
 ####################################################
 def OFC_Write_Doc(pWCallback=None, pFile=None, pLabel=None):
     if(platform == 'android'):
+        Logger.info('***FILE_API30*** : def OFC_Write_Doc()...start')
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         
         #########################################################
         def on_activity_save(request_code, result_code, intent):
+            Logger.info('***FILE_API30*** : def on_activity_save()...start')
             if request_code != RESULT_SAVE_DOC:
-                Logger.warning('OFC_Write_Doc: ignoring activity result that was not RESULT_SAVE_DOC')
+                Logger.warning('on_activity_save: ignoring activity result that was not RESULT_SAVE_DOC')
                 return
             
             if result_code == Activity.RESULT_CANCELED:
@@ -209,9 +243,10 @@ def OFC_Write_Doc(pWCallback=None, pFile=None, pLabel=None):
             # columnIndex = cursor.getColumnIndex(filePathColumn[0])  # int
             # docPath = cursor.getString(columnIndex)                 # String
             cursor.close()
-            Logger.info('android_ui: OFC_Write_Doc() selected %s', selectedUri.getPath())
+            Logger.info('***FILE_API30*** : android_ui: on_activity_save() selected %s', selectedUri.getPath())
             
             Clock.schedule_once(lambda dt: pWCallback(selectedUri), 0)
+            Logger.info('***FILE_API30*** : def on_activity_save()...end')
             return
 
         activity.bind(on_activity_result = on_activity_save)
@@ -221,12 +256,14 @@ def OFC_Write_Doc(pWCallback=None, pFile=None, pLabel=None):
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.setType('*/*')
         currentActivity.startActivityForResult(intent, RESULT_SAVE_DOC)
+        Logger.info('***FILE_API30*** : def OFC_Write_Doc()...end')
         return
     
 
 ####################################################
 def Callback_Write(uri):
     if(platform == 'android'):
+        Logger.info('***FILE_API30*** : def Callback_Write()...start')
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         # Just some function that returns binary data from somewhere to write to uri
         
@@ -257,17 +294,21 @@ def Callback_Write(uri):
                 
             except:
                 print('Saving bytedata failed.')
+        Logger.info('***FILE_API30*** : def Callback_Write()...end')
 
 
 ####################################################
 def Read_BinaryFile(pData = None):
-    fo = open("loneliness.txt", "rb")
-    if(fo != None):
-        byte = fo.read(1)
-        while(byte):
-            pData.append(byte)
+    if(platform == 'android'):
+        Logger.info('***FILE_API30*** : def Read_BinaryFile()...start')
+        fo = open("loneliness.txt", "rb")
+        if(fo != None):
             byte = fo.read(1)
-        fo.close()
+            while(byte):
+                pData.append(byte)
+                byte = fo.read(1)
+            fo.close()
+        Logger.info('***FILE_API30*** : def Read_BinaryFile()...end')
     return 
 
 
