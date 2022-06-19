@@ -102,6 +102,8 @@ if platform == 'android':
 ################################################
 
 def Read_File(pFile=None, pLabel=None):
+    global Global_Label
+    Global_Label = pLabel
     String = 'Read_File()\n\nNot Functional Yet'
     if(platform == 'android'):
         Logger.info('***FILE_API30*** : def Read_File()...start')
@@ -110,10 +112,7 @@ def Read_File(pFile=None, pLabel=None):
         and check_permission("android.permission.INTERNET"):
         # if permissions_granted:   # variant
             OFC_Read_Doc(pRCallback = Callback_Read, \
-                         pFile = pFile, \
-                         pLabel = pLabel)
-            if(pLabel != None):
-                pLabel.text = ''
+                         pFile = pFile)
         else:
             get_permissions()
         Logger.info('***FILE_API30*** : def Read_File()...end')
@@ -128,8 +127,7 @@ def Write_File(pFile=None, pLabel=None):
         and check_permission("android.permission.INTERNET"):
         # if permissions_granted:   # variant
             OFC_Write_Doc(pWCallback = Callback_Write, \
-                          pFile = pFile, \
-                          pLabel = pLabel)
+                          pFile = pFile)
         else:
             get_permissions()
         Logger.info('***FILE_API30*** : def Write_File()...end')
@@ -141,7 +139,7 @@ def Write_File(pFile=None, pLabel=None):
 # absolute filepath of document user selected.
 # None if user canceled.
 ####################################################
-def OFC_Read_Doc(pRCallback=None, pFile=None, pLabel=None):
+def OFC_Read_Doc(pRCallback=None, pFile=None):
     if(platform == 'android'):
         Logger.info('***FILE_API30*** : def OFC_Read_Doc()...start')
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
@@ -194,6 +192,9 @@ def OFC_Read_Doc(pRCallback=None, pFile=None, pLabel=None):
 
 ####################################################
 def Callback_Read(filename):
+    global Global_Label
+    if(Global_Label != None):
+        Global_Label.text = '\nfilename = ' + str(filename) + '\n'
     if(filename != None):
         if(platform == 'android'):
             Logger.info('***FILE_API30*** : def Callback_Read()...start')
@@ -212,7 +213,7 @@ def Callback_Read(filename):
     
 
 ####################################################
-def OFC_Write_Doc(pWCallback=None, pFile=None, pLabel=None):
+def OFC_Write_Doc(pWCallback=None, pFile=None):
     if(platform == 'android'):
         Logger.info('***FILE_API30*** : def OFC_Write_Doc()...start')
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
@@ -223,41 +224,34 @@ def OFC_Write_Doc(pWCallback=None, pFile=None, pLabel=None):
             if request_code != RESULT_SAVE_DOC:
                 Logger.warning('on_activity_save: ignoring activity result that was not RESULT_SAVE_DOC')
                 return
-            
             if result_code == Activity.RESULT_CANCELED:
                 Clock.schedule_once(lambda dt: pWCallback(None), 0)
                 return
-            
             if result_code != Activity.RESULT_OK:
                 # This may just go into the void...
                 raise NotImplementedError('Unknown result_code "{}"'.format(result_code))
-            
             selectedUri = intent.getData()                  # Uri
             filePathColumn = [MediaStore_Images_Media_DATA] # String
-            
             # Cursor
             cursor = currentActivity.getContentResolver().query(selectedUri, filePathColumn, None, None, None)
             cursor.moveToFirst()
-            
             # If you need to get the document path, but I used selectedUri.getPath()
             # columnIndex = cursor.getColumnIndex(filePathColumn[0])  # int
             # docPath = cursor.getString(columnIndex)                 # String
             cursor.close()
             Logger.info('***FILE_API30*** : android_ui: on_activity_save() selected %s', selectedUri.getPath())
-            
             Clock.schedule_once(lambda dt: pWCallback(selectedUri), 0)
             Logger.info('***FILE_API30*** : def on_activity_save()...end')
             return
-
-        activity.bind(on_activity_result = on_activity_save)
         
+        activity.bind(on_activity_result = on_activity_save)
         # Here's another Intent in contrast to get the file
         intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.setType('*/*')
         currentActivity.startActivityForResult(intent, RESULT_SAVE_DOC)
         Logger.info('***FILE_API30*** : def OFC_Write_Doc()...end')
-        return
+    return
     
 
 ####################################################
