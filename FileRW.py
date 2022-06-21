@@ -147,39 +147,50 @@ def OFC_Read_Doc(pRCallback=None, pFile=None):
         file_p = cast('java.io.File', context.getExternalFilesDir(Env.DIRECTORY_DOCUMENTS))
         
         ##########################################################
-        def on_activity_result(request_code, result_code, intent):
-            Logger.info('***FILE_API30*** : def on_activity_result()...start')
+        def on_activity_Load(request_code, result_code, intent):
+            Logger.info('***FILE_API30*** : def on_activity_Load()...start')
+            Logger.info('***FILE_API30*** : request_code = %s', str(request_code))
+            Logger.info('***FILE_API30*** : result_code = %s', str(result_code))
             if request_code != RESULT_LOAD_DOC:
-                Logger.warning('on_activity_result: ignoring activity result that was not RESULT_LOAD_DOC')
+                Logger.warning('***FILE_API30*** : on_activity_Load: result that was not RESULT_LOAD_DOC')
                 return
-
+            
+            Logger.info('***FILE_API30*** : Activity.RESULT_CANCELED = %s', str(Activity.RESULT_CANCELED))
             if result_code == Activity.RESULT_CANCELED:
                 Clock.schedule_once(lambda dt: pRCallback(None), 0)
                 return
-
+            
+            Logger.info('***FILE_API30*** : Activity.RESULT_OK = %s', str(Activity.RESULT_OK))
             if result_code != Activity.RESULT_OK:
                 # This may just go into the void...
-                raise NotImplementedError('Unknown result_code "{}"'.format(result_code))
+                raise NotImplementedError('***FILE_API30*** : Unknown result_code "{}"'.format(result_code))
 
-            selectedFile = intent.getData();  # Uri
+            selectedUri = intent.getData();  # Uri
+            Logger.info('***FILE_API30*** : selectedUri = %s', str(selectedUri))
+            
             filePathColumn = [MediaStore_Images_Media_DATA]; # String[]
+            Logger.info('***FILE_API30*** : filePathColumn = %s', str(filePathColumn))
+            
             # Cursor
-            cursor = currentActivity.getContentResolver().query(selectedFile, filePathColumn, None, None, None)
+            cursor = currentActivity.getContentResolver().query(selectedUri, filePathColumn, None, None, None)
+            Logger.info('***FILE_API30*** : cursor = %s', str(cursor))
             cursor.moveToFirst()
+            Logger.info('***FILE_API30*** : cursor = %s', str(cursor))
 
             # int
-            columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+            columnIndex = cursor.getColumnIndex(filePathColumn[0])
+            Logger.info('***FILE_API30*** : columnIndex = %s', str(columnIndex))
+            
             # String
-            docPath = cursor.getString(columnIndex);
-            cursor.close();
-            Logger.info('***FILE_API30*** : on_activity_result() : selected %s', docPath)
-            Logger.info('***FILE_API30*** : on_activity_result() : selected %s', str(docPath))
+            docPath = cursor.getString(columnIndex)
+            cursor.close()
+            Logger.info('***FILE_API30*** : on_activity_Load() : selected %s', str(docPath))
             
             Clock.schedule_once(lambda dt: pRCallback(docPath), 0)
-            Logger.info('***FILE_API30*** : def on_activity_result()...end')
+            Logger.info('***FILE_API30*** : def on_activity_Load()...end')
             return
 
-        activity.bind(on_activity_result = on_activity_result)
+        activity.bind(on_activity_result = on_activity_Load)
         intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.setType("*/*")
@@ -219,32 +230,63 @@ def OFC_Write_Doc(pWCallback=None, pFile=None):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         
         #########################################################
-        def on_activity_save(request_code, result_code, intent):
-            Logger.info('***FILE_API30*** : def on_activity_save()...start')
+        def on_activity_Save(request_code, result_code, intent):
+            Logger.info('***FILE_API30*** : def on_activity_Save()...start')
+            Logger.info('***FILE_API30*** : request_code = %s', str(request_code))
+            Logger.info('***FILE_API30*** : result_code = %s', str(result_code))
             if request_code != RESULT_SAVE_DOC:
-                Logger.warning('on_activity_save: ignoring activity result that was not RESULT_SAVE_DOC')
+                Logger.warning('***FILE_API30*** : on_activity_Save: result that was not RESULT_SAVE_DOC')
                 return
+            
+            Logger.info('***FILE_API30*** : Activity.RESULT_CANCELED = %s', str(Activity.RESULT_CANCELED))
             if result_code == Activity.RESULT_CANCELED:
                 Clock.schedule_once(lambda dt: pWCallback(None), 0)
                 return
+            
+            Logger.info('***FILE_API30*** : Activity.RESULT_OK = %s', str(Activity.RESULT_OK))
             if result_code != Activity.RESULT_OK:
                 # This may just go into the void...
-                raise NotImplementedError('Unknown result_code "{}"'.format(result_code))
-            selectedUri = intent.getData()                  # Uri
+                raise NotImplementedError('***FILE_API30*** : Unknown result_code "{}"'.format(result_code))
+                
+            selectedUri = intent.getData() # Uri
+            Logger.info('***FILE_API30*** : selectedUri = %s', str(selectedUri))
+            Logger.info('***FILE_API30*** : selectedUri = %s', str(selectedUri))
+            Logger.info('***FILE_API30*** : selectedUri.get = %s', str(selectedUri.get()))
+            Logger.info('***FILE_API30*** : selectedUri.getApplicationContext = %s', str(selectedUri.getApplicationContext()))
+            Logger.info('***FILE_API30*** : selectedUri.getChannel = %s', str(selectedUri.getChannel()))
+            Logger.info('***FILE_API30*** : selectedUri.getColumnIndex = %s', str(selectedUri.getColumnIndex()))
+            Logger.info('***FILE_API30*** : selectedUri.getContentResolver = %s', str(selectedUri.getContentResolver()))
+            Logger.info('***FILE_API30*** : selectedUri.getData = %s', str(selectedUri.getData()))
+            Logger.info('***FILE_API30*** : selectedUri.getExternalFilesDir = %s', str(selectedUri.getExternalFilesDir()))
+            Logger.info('***FILE_API30*** : selectedUri.getFileDescriptor = %s', str(selectedUri.getFileDescriptor()))
+            Logger.info('***FILE_API30*** : selectedUri.getPath = %s', str(selectedUri.getPath()))
+            Logger.info('***FILE_API30*** : selectedUri.getString = %s', str(selectedUri.getString()))
+            Logger.info('***FILE_API30*** : selectedUri.get_permissions = %s', str(selectedUri.get_permissions()))
+            
             filePathColumn = [MediaStore_Images_Media_DATA] # String
+            Logger.info('***FILE_API30*** : filePathColumn = %s', str(filePathColumn))
+            
             # Cursor
             cursor = currentActivity.getContentResolver().query(selectedUri, filePathColumn, None, None, None)
+            Logger.info('***FILE_API30*** : cursor = %s', str(cursor))
             cursor.moveToFirst()
-            # If you need to get the document path, but I used selectedUri.getPath()
-            # columnIndex = cursor.getColumnIndex(filePathColumn[0])  # int
-            # docPath = cursor.getString(columnIndex)                 # String
+            
+            columnIndex = cursor.getColumnIndex(filePathColumn[0])  # int
+            Logger.info('***FILE_API30*** : columnIndex = %s', str(columnIndex))
+            
+            docPath = cursor.getString(columnIndex) # String
+            Logger.info('***FILE_API30*** : on_activity_Load() : selected = %s', str(docPath))
+            
             cursor.close()
-            Logger.info('***FILE_API30*** : android_ui: on_activity_save() selected %s', selectedUri.getPath())
-            Clock.schedule_once(lambda dt: pWCallback(selectedUri), 0)
-            Logger.info('***FILE_API30*** : def on_activity_save()...end')
+            
+            Logger.info('***FILE_API30*** : on_activity_Save() selectedUri.getPath() = %s', selectedUri.getPath())
+            
+###            Clock.schedule_once(lambda dt: pWCallback(selectedUri), 0)
+
+            Logger.info('***FILE_API30*** : def on_activity_Save()...end')
             return
         
-        activity.bind(on_activity_result = on_activity_save)
+        activity.bind(on_activity_result = on_activity_Save)
         # Here's another Intent in contrast to get the file
         intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
