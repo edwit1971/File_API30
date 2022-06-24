@@ -51,7 +51,7 @@ class LayoutsApp(MDApp):
     
     
     def build(self):
-        LayoutsApp.title = 'Files with API30 v2022-06-21'
+        LayoutsApp.title = 'Files with API30'
         self.Draw_Lines.Show_Instructions(self.Main_Win)
         ############################################
         if(platform == 'android'):

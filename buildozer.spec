@@ -121,7 +121,7 @@ android.permissions = WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
 # (int) Target Android API, should be as high as possible.
 # API 28 is AndroidOS 9.0 and has to do with changes made in v10.0 with File Handling
 # API 29 is Android 10 and I need to set requestLegacyExternalStorage to True
-android.api = 29
+android.api = 30
 
 # (int) Minimum API your APK will support. 21 = Lollipop v5.0
 android.minapi = 21

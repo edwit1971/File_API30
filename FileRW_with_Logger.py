@@ -61,12 +61,14 @@ if platform == 'android':
     MediaStore_Images_Media_DATA = "_data"  # Value of MediaStore.Images.Media.DATA
     
     def permissions_callback(permissions, results):
+        Logger.info('***FILE_API30*** : def permissions_callback()...')
         if all([res for res in results]):
             permissions_granted = True
         else:
             permissions_granted = False
     
     def get_permissions():
+        Logger.info('***FILE_API30*** : def get_permissions()...')
         request_permissions([
             Permission.WRITE_EXTERNAL_STORAGE,
             Permission.READ_EXTERNAL_STORAGE,
@@ -106,6 +108,7 @@ def Read_File(pFile=None, pLabel=None):
     Global_Label = pLabel
     String = 'Read_File()\n\nNot Functional Yet'
     if(platform == 'android'):
+        Logger.info('***FILE_API30*** : def Read_File()...start')
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
@@ -114,11 +117,13 @@ def Read_File(pFile=None, pLabel=None):
                          pFile = pFile)
         else:
             get_permissions()
+        Logger.info('***FILE_API30*** : def Read_File()...end')
     return String
 
 
 def Write_File(pFile=None, pLabel=None):
     if(platform == 'android'):
+        Logger.info('***FILE_API30*** : def Write_File()...start')
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
@@ -127,6 +132,7 @@ def Write_File(pFile=None, pLabel=None):
                           pFile = pFile)
         else:
             get_permissions()
+        Logger.info('***FILE_API30*** : def Write_File()...end')
     return
 
 
@@ -137,49 +143,71 @@ def Write_File(pFile=None, pLabel=None):
 ####################################################
 def SFP_Read_Doc(pRCallback=None, pFile=None):
     if(platform == 'android'):
+        Logger.info('***FILE_API30*** : def SFP_Read_Doc()...start')
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         context = cast('android.content.ContextWrapper', currentActivity.getApplicationContext())
         file_p = cast('java.io.File', context.getExternalFilesDir(Env.DIRECTORY_DOWNLOADS))
         
         ##########################################################
         def on_activity_Load(request_code, result_code, intent):
+            Logger.info('***FILE_API30*** : def on_activity_Load()...start')
+            Logger.info('***FILE_API30*** : request_code = %s', str(request_code))
+            Logger.info('***FILE_API30*** : result_code = %s', str(result_code))
             if request_code != RESULT_LOAD_DOC:
                 Logger.warning('***FILE_API30*** : on_activity_Load: result that was not RESULT_LOAD_DOC')
                 return
             
+            Logger.info('***FILE_API30*** : Activity.RESULT_CANCELED = %s', str(Activity.RESULT_CANCELED))
             if result_code == Activity.RESULT_CANCELED:
                 Clock.schedule_once(lambda dt: pRCallback(None), 0)
                 return
             
+            Logger.info('***FILE_API30*** : Activity.RESULT_OK = %s', str(Activity.RESULT_OK))
             if result_code != Activity.RESULT_OK:
                 # This may just go into the void...
                 raise NotImplementedError('***FILE_API30*** : Unknown result_code "{}"'.format(result_code))
 
             selectedUri = intent.getData();  # Uri
+            Logger.info('***FILE_API30*** : selectedUri = %s', str(selectedUri))
+            Logger.info('***FILE_API30*** : selectedUri = %s', str(selectedUri.toString()))
+            Logger.info('***FILE_API30*** : getScheme() = %s', str(selectedUri.getScheme()))
+            Logger.info('***FILE_API30*** :   getPath() = %s', str(selectedUri.getPath()))
+            
             # str(selectedUri.getScheme())) == 'content'
                 
             filePathColumn = [MediaStore_Images_Media_DATA]; # String[]
+            Logger.info('***FILE_API30*** : filePathColumn = %s', str(filePathColumn))
             
             # Cursor
             cursor = currentActivity.getContentResolver().query(selectedUri, filePathColumn, None, None, None)
+            # cursor = currentActivity.getContentResolver().query(selectedUri, None, None, None, None)
             cursor.moveToFirst()
+            Logger.info('***FILE_API30*** : cursor = %s', str(cursor))
 
             # int
             columnIndex = cursor.getColumnIndex(filePathColumn[0])
+            Logger.info('***FILE_API30*** : columnIndex = %s', str(columnIndex))
             
             # fileName = cursor.getString(columnIndex)
             cursor.close()
             
-            fileName = 'None'
             filePaths = selectedUri.getPath()
             Length = len(filePaths)
+            Logger.info('***FILE_API30*** : Length = %s', str(Length))
             if( (Length > 1) and (filePaths.find(':') != -1) ):
-                n = filePaths.find(':Download/')
-                if(n != -1):
-                    dwnldPath = Env.getExternalStoragePublicDirectory(Env.DIRECTORY_DOWNLOADS).toString()
-                    fileName = os.path.join(dwnldPath, filePaths[(n+10):Length])
-
+                n = filePaths.find(':')
+                Logger.info('***FILE_API30*** : n = %s', str(n))
+                n = filePaths.find('/', n)
+                Logger.info('***FILE_API30*** : n = %s', str(n))
+                dwnldPath = Env.getExternalStoragePublicDirectory(Env.DIRECTORY_DOWNLOADS).toString()
+                Logger.info('***FILE_API30*** : dwnldPath = %s', str(dwnldPath))
+                fileName = os.path.join(dwnldPath, filePaths[(n+1):Length])
+            else:
+                fileName = 'None'
+            Logger.info('***FILE_API30*** : fileName = %s', str(fileName))
+            
             Clock.schedule_once(lambda dt: pRCallback(fileName), 0)
+            Logger.info('***FILE_API30*** : def on_activity_Load()...end')
             return
 
         activity.bind(on_activity_result = on_activity_Load)
@@ -192,6 +220,7 @@ def SFP_Read_Doc(pRCallback=None, pFile=None):
         # intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, initialURI)
         intent.setAction(Intent.ACTION_GET_CONTENT)
         currentActivity.startActivityForResult(intent, RESULT_LOAD_DOC)
+        Logger.info('***FILE_API30*** : def SFP_Read_Doc()...end')
     return
 
 
@@ -200,15 +229,18 @@ def Callback_Read(filename):
     global Global_Label
     if(Global_Label != None):
         Global_Label.text = '\nfilename = ' + str(filename) + '\n'
-        return
     if( (filename != None) and (os.path.isfile(filename)) ):
         if(platform == 'android'):
+            Logger.info('***FILE_API30*** : def Callback_Read()...start')
+            Logger.info('***FILE_API30*** : filename = %s', str(filename))
             with io.open(filename, encoding='utf-8') as file:
                 data = None
                 try:
+                    Logger.info('***FILE_API30*** : data = json.load(file)')
                     data = json.load(file)
                 except:
-                    pass
+                    Logger.info('***FILE_API30*** : ERROR data = json.load(file)')
+            Logger.info('***FILE_API30*** : def Callback_Read()...end')
     return
     
 
