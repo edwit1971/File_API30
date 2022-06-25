@@ -86,31 +86,28 @@ if platform == 'android':
 ####################################################
 
 
-def Read_File(pFile=None, pLabel=None):
+def Read_File(pLabel=None):
     global Global_Label
     Global_Label = pLabel
-    String = 'Read_File()\n\nNot Functional Yet'
     if(platform == 'android'):
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
-        # if permissions_granted:   # variant
-            #SFP_Read_Doc(pRCallback = Callback_Read_FilePath, \
-            SFP_Read_Doc(pRCallback = Callback_Read_URI, \
-                         pFile = pFile)
+            #SFP_Read_Doc(pRCallback = Callback_Read_FilePath)
+            SFP_Read_Doc(pRCallback = Callback_Read_URI)
         else:
             get_permissions()
-    return String
+    return
 
 
-def Write_File(pFile=None, pLabel=None):
+def Write_File(pLabel=None):
+    global Global_Label
+    Global_Label = pLabel
     if(platform == 'android'):
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
-        # if permissions_granted:   # variant
-            SFP_Write_Doc(pWCallback = Callback_Write, \
-                          pFile = pFile)
+            SFP_Write_Doc(pWCallback = Callback_Write_URI)
         else:
             get_permissions()
     return
@@ -121,7 +118,7 @@ def Write_File(pFile=None, pLabel=None):
 # absolute filepath of document user selected.
 # None if user canceled.
 ####################################################
-def SFP_Read_Doc(pRCallback=None, pFile=None):
+def SFP_Read_Doc(pRCallback=None):
     if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         context = cast('android.content.ContextWrapper', currentActivity.getApplicationContext())
@@ -228,12 +225,10 @@ def Callback_Read_FilePath(pURI=None):
             docStream = None
         
         if(docStream != None):
-#           ints = []  # Used for Raw File Reading
             str1 = ''
             intVal = docStream.read()  # Reads Raw Values
             while intVal != -1:
                 str1 += str(chr(intVal))
-#               ints.append(intVal)  # Used for Raw File Reading
                 intVal = docStream.read()
             docStream.close()
             # Convert the array to bytes so we
@@ -249,7 +244,7 @@ def Callback_Read_FilePath(pURI=None):
 # absolute filepath of document to save.
 # None if user canceled.
 ####################################################
-def SFP_Write_Doc(pWCallback=None, pFile=None):
+def SFP_Write_Doc(pWCallback=None):
     if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         
@@ -281,32 +276,33 @@ def SFP_Write_Doc(pWCallback=None, pFile=None):
     
 
 ####################################################
-def Callback_Write(pURI = None):
+def Callback_Write_URI(pURI = None):
     if(pURI == None):
         return
+    global Global_Label
     if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         
         try:
-            # For writing, it is important to get ParcelFileDescriptor from ContentResolver ...
-            pfd = currentActivity.getContentResolver().openFileDescriptor(pURI, "w")
-            
-            # ... because from ParcelFileDescriptor you need to use getFileDescriptor() function,
-            # which will allow us to create a FileOutputStream (and not a regular OutputStream), ...
-            fos = FileOutputStream(pfd.getFileDescriptor())
-            
-            # ... because FileOutputStream can access the OutputStream channel,
-            fos_ch = fos.getChannel()
-            
-            # ... so that after writing data to a file ...
-            fos.write(String_Data)
-            
-            # ... this channel was able to cut off extra bytes if the number of newly written bytes was less than in the file being rewritten.
-            fos_ch.truncate(len(String_Data))
-            
-            fos.close()
+            docStream = currentActivity.getContentResolver().openOutputStream(pURI)
         except:
-            print('Saving String_Data ERROR THROWN.')
+            docStream = None
+            
+        if(docStream != None):
+            try:
+                ints = []
+                # Convert String Data to BYTE data
+                for n in range(0, len(String_Data)):
+                    intVal = ord(String_Data[n])
+                    ints.append(intVal)
+                docStream.write(ints, 0, len(ints))
+                docStream.close()
+            except:
+                Logger.warning('***FILE_API30*** : docStream.write(ints, 0, len(ints)) THREW ERROR!!!')
+
+            Global_Label.text += '\n\n File Written'
+        else:
+            Global_Label.text += '\n\n openOutputStream Failed'
     return
 
 
@@ -322,18 +318,4 @@ String_Data += 'So know by this,\n'
 String_Data += 'that in immensity,\n'
 String_Data += 'there is one lonelier than you.\n\n'
 String_Data += 'by Theodore Sturgeon'
-
-
-# fileName = 'None'
-# filePaths = selectedUri.getPath()
-# Length = len(filePaths)
-# if( (Length > 1) and (filePaths.find(':') != -1) ):
-#     # Extract the filename they selected
-#     n = filePaths.find(':Download/')
-#     if(n != -1):
-#         # Hard-code the path of the file to be the
-#         # internal storage of the Download folder
-#         # with the getExternalStoragePublicDirectory(Env.DIRECTORY_DOWNLOADS).toString()
-#         dwnldPath = Env.getExternalStoragePublicDirectory(Env.DIRECTORY_DOWNLOADS).toString()
-#         fileName = os.path.join(dwnldPath, filePaths[(n+10):Length])
 

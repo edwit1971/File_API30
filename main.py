@@ -134,21 +134,13 @@ class LayoutsApp(MDApp):
     
     ################################################
     def Press_Read(self, instance):
-        ############################
-        # Does File2
-        # /Download/File_API30.txt Exist
-        if(os.path.isfile(self.strFPName)):
-            if(platform == 'android'):
-                ############################
-                # Read File
-                RW.Read_File(pFile=self.strFPName, pLabel=self.LText)
-                ############################
-                # Display File
-                #self.LText.text = str
-            else:
-                self.LText.text  = 'Press_Read()\n\nNot Android Device'
+        if(platform == 'android'):
+            ############################
+            # Read a text File and 
+            # display its contents
+            RW.Read_File(pLabel=self.LText)
         else:
-            self.LText.text  = 'Press_Read()\n\nFile Not Found\n\n' + self.strFPName
+            self.LText.text  = 'Press_Read()\n\nNot Android Device'
         return
     
     
@@ -156,8 +148,8 @@ class LayoutsApp(MDApp):
     def Press_Write(self, instance):
         if(platform == 'android'):
             ############################
-            # Save File1 to Download Folder
-            RW.Write_File(pFile=self.strFPName, pLabel=self.LText)
+            # Save STRING_DATA to a file
+            RW.Write_File(pLabel=self.LText)
         else:
             self.LText.text  = 'Press_Write()\n\nNot Android Device'
         return
