@@ -95,8 +95,8 @@ def Read_File(pFile=None, pLabel=None):
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
         # if permissions_granted:   # variant
-            # SFP_Read_Doc(pRCallback = Callback_Read_URI, \
-            SFP_Read_Doc(pRCallback = Callback_Read_FilePath, \
+            #SFP_Read_Doc(pRCallback = Callback_Read_FilePath, \
+            SFP_Read_Doc(pRCallback = Callback_Read_URI, \
                          pFile = pFile)
         else:
             get_permissions()
@@ -215,16 +215,16 @@ def Callback_Read_FilePath(pURI=None):
             Logger.info('***FILE_API30*** : fUri = Uri.parse(strContent) THREW ERROR')
         
         try:
+            docStream = currentActivity.getContentResolver().openInputStream(fUri) # Fails
+            # docStream = currentActivity.getContentResolver().openInputStream(pURI) # Succeeds
+        except:
+            Logger.info('***FILE_API30*** : docStream = openInputStream(fUri) THREW ERROR')
             Logger.info('***FILE_API30*** : pURI.toString() = %s', pURI.toString())
             Logger.info('***FILE_API30*** : fUri.toString() = %s', fUri.toString())
             Logger.info('***FILE_API30*** : pURI.getPath() = %s', pURI.getPath())
             Logger.info('***FILE_API30*** : fUri.getPath() = %s', fUri.getPath())
             Logger.info('***FILE_API30*** : pURI.getScheme() = %s', pURI.getScheme())
             Logger.info('***FILE_API30*** : fUri.getScheme() = %s', fUri.getScheme())
-            docStream = currentActivity.getContentResolver().openInputStream(fUri) # Fails
-            # docStream = currentActivity.getContentResolver().openInputStream(pURI) # Succeeds
-        except:
-            Logger.info('***FILE_API30*** : docStream = openInputStream(fUri) THREW ERROR')
             docStream = None
         
         if(docStream != None):
