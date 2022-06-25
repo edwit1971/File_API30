@@ -31,6 +31,7 @@
 # never did. It kept returning None.
 # no idea why, and I couldn't get it to work
 #############################################
+# selectedUri = intent.getData();  # Uri
 # filePathColumn = [MediaStore_Images_Media_DATA]; # String[]
 # cursor = currentActivity.getContentResolver().query(selectedUri, filePathColumn, None, None, None)
 # cursor.moveToFirst()
@@ -140,9 +141,7 @@ def SFP_Read_Doc(pRCallback=None, pFile=None):
                 raise NotImplementedError('***FILE_API30*** : Unknown result_code "{}"'.format(result_code))
 
             selectedUri = intent.getData();  # Uri
-            
             Clock.schedule_once(lambda dt: pRCallback(pURI=selectedUri), 0)
-
             return
 
         activity.bind(on_activity_result = on_activity_Load)
@@ -163,7 +162,7 @@ def SFP_Read_Doc(pRCallback=None, pFile=None):
 def Callback_Read_URI(pURI=None):
     global Global_Label
     if(Global_Label != None):
-        Global_Label.text = '\nURI = ' + str(pURI.toString) + '\n'
+        Global_Label.text = '\nURI = ' + str(pURI.toString()) + '\n'
     ################################################
     if( (platform == 'android') and (pURI != None) ):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
@@ -174,15 +173,17 @@ def Callback_Read_URI(pURI=None):
             docStream = None
             
         if(docStream != None):
-            ints = []
-            intVal = docStream.read()
+#           ints = []  # Used for Raw File Reading
+            str1 = ''
+            intVal = docStream.read()  # Reads Raw Values
             while intVal != -1:
-                ints.append(intVal)
+                str1 += str(chr(intVal))
+#               ints.append(intVal)  # Used for Raw File Reading
                 intVal = docStream.read()
             docStream.close()
-            # Convert the array to bytes
-            docBytes = bytes(b % 256 for b in ints)
-            Global_Label.text += '\n\n' + str(docBytes)
+            # Convert the array to bytes so we
+            # can display the file as text
+            Global_Label.text += '\n\n' + str1
         else:
             Global_Label.text += '\n\n openInputStream Failed'
     return
@@ -190,8 +191,9 @@ def Callback_Read_URI(pURI=None):
 
 ####################################################
 # This Callback function for reading a Text-File
-# reads a hard-coded file shit.txt in the download
-# folder and displays it's content
+# reads a hard-coded file File_API30.txt in the 
+# download folder and displays it's content
+# (You can change it to whatever you want though)
 ####################################################
 def Callback_Read_FilePath(pFName=None):
     global Global_Label
@@ -204,7 +206,7 @@ def Callback_Read_FilePath(pFName=None):
         try:
             # I got this string from the command
             # Logger.info('***FILE_API30*** : pURI.toString = %s', pURI.toString())
-            strContent = 'content://com.android.externalstorage.documents/document/primary%3ADownload%2Fshit.txt'
+            strContent = 'content://com.android.externalstorage.documents/document/primary%3ADownload%2FFile_API30.txt'
             fUri = Uri.parse(strContent)
         except:
             Logger.info('***FILE_API30*** : fUri = Uri.parse(strContent) THREW ERROR')
@@ -221,16 +223,17 @@ def Callback_Read_FilePath(pFName=None):
         
         docStream = None
         if(docStream != None):
-            ints = []
-            intVal = docStream.read()
+#           ints = []  # Used for Raw File Reading
+            str1 = ''
+            intVal = docStream.read()  # Reads Raw Values
             while intVal != -1:
-                ints.append(intVal)
+                str1 += str(chr(intVal))
+#               ints.append(intVal)  # Used for Raw File Reading
                 intVal = docStream.read()
             docStream.close()
-            # Convert the array to bytes
-            docBytes = bytes(b % 256 for b in ints)
-            Global_Label.text += '\n\n' + str(docBytes)
-            Logger.info('***FILE_API30*** : docBytes = %s', str(docBytes))
+            # Convert the array to bytes so we
+            # can display the file as text
+            Global_Label.text += '\n\n' + str1
         else:
             Global_Label.text += '\n\n openInputStream Failed'
     return
