@@ -299,11 +299,24 @@ def Callback_Write_URI(pURI = None):
                 docStream.close()
             except:
                 Logger.warning('***FILE_API30*** : docStream.write(ints, 0, len(ints)) THREW ERROR!!!')
-
+            Global_Label.text  = 'Path = ' + str(pURI.getPath())
             Global_Label.text += '\n\n File Written'
         else:
-            Global_Label.text += '\n\n openOutputStream Failed'
+            Global_Label.text = '\n\n openOutputStream Failed'
     return
+
+
+def Get_Internal_Path():
+    ret = ''
+    if(platform == 'android'):
+        try:
+            # ret = Env.getExternalStoragePublicDirectory(Env.DIRECTORY_DOWNLOADS).toString() # This works too
+            # from android.storage import primary_external_storage_path
+            # ret = primary_external_storage_path() # This works too
+            ret = Env.getExternalStorageDirectory()
+        except:
+            ret = ''
+    return ret
 
 
 ####################################################
