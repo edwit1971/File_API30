@@ -95,7 +95,8 @@ def Read_File(pFile=None, pLabel=None):
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
         # if permissions_granted:   # variant
-            SFP_Read_Doc(pRCallback = Callback_Read_URI, \
+            # SFP_Read_Doc(pRCallback = Callback_Read_URI, \
+            SFP_Read_Doc(pRCallback = Callback_Read_FilePath, \
                          pFile = pFile)
         else:
             get_permissions()
@@ -141,7 +142,7 @@ def SFP_Read_Doc(pRCallback=None, pFile=None):
                 raise NotImplementedError('***FILE_API30*** : Unknown result_code "{}"'.format(result_code))
 
             selectedUri = intent.getData();  # Uri
-            Clock.schedule_once(lambda dt: pRCallback(pURI=selectedUri), 0)
+            Clock.schedule_once(lambda dt: pRCallback(pURI=selectedUri), 0)  # Calls URI Callback
             return
 
         activity.bind(on_activity_result = on_activity_Load)
@@ -160,11 +161,13 @@ def SFP_Read_Doc(pRCallback=None, pFile=None):
 # Systen Picker and displays it's content
 ####################################################
 def Callback_Read_URI(pURI=None):
+    if(pURI == None):
+        return
     global Global_Label
     if(Global_Label != None):
         Global_Label.text = '\nURI = ' + str(pURI.toString()) + '\n'
     ################################################
-    if( (platform == 'android') and (pURI != None) ):
+    if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         
         try:
@@ -173,12 +176,10 @@ def Callback_Read_URI(pURI=None):
             docStream = None
             
         if(docStream != None):
-#           ints = []  # Used for Raw File Reading
             str1 = ''
             intVal = docStream.read()  # Reads Raw Values
             while intVal != -1:
                 str1 += str(chr(intVal))
-#               ints.append(intVal)  # Used for Raw File Reading
                 intVal = docStream.read()
             docStream.close()
             # Convert the array to bytes so we
@@ -195,16 +196,18 @@ def Callback_Read_URI(pURI=None):
 # download folder and displays it's content
 # (You can change it to whatever you want though)
 ####################################################
-def Callback_Read_FilePath(pFName=None):
+def Callback_Read_FilePath(pURI=None):
     global Global_Label
     if(Global_Label != None):
-        Global_Label.text = '\nfilename = ' + str(pFName) + '\n'
+        Global_Label.text = '\nfilename = File_API30.txt\n'
     ################################################
-    if( (platform == 'android') and (pFName != None) ):
+    if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         
         try:
-            # I got this string from the command
+            # File_API30.txt Hard-Coded
+            # I got strContent from the command
+            # pURI.toString() in the Logger ADB view
             # Logger.info('***FILE_API30*** : pURI.toString = %s', pURI.toString())
             strContent = 'content://com.android.externalstorage.documents/document/primary%3ADownload%2FFile_API30.txt'
             fUri = Uri.parse(strContent)
@@ -212,16 +215,18 @@ def Callback_Read_FilePath(pFName=None):
             Logger.info('***FILE_API30*** : fUri = Uri.parse(strContent) THREW ERROR')
         
         try:
-            pfd = currentActivity.getContentResolver().openFileDescriptor(fUri, "r")
+            Logger.info('***FILE_API30*** : pURI.toString() = %s', pURI.toString())
+            Logger.info('***FILE_API30*** : fUri.toString() = %s', fUri.toString())
+            Logger.info('***FILE_API30*** : pURI.getPath() = %s', pURI.getPath())
+            Logger.info('***FILE_API30*** : fUri.getPath() = %s', fUri.getPath())
+            Logger.info('***FILE_API30*** : pURI.getScheme() = %s', pURI.getScheme())
+            Logger.info('***FILE_API30*** : fUri.getScheme() = %s', fUri.getScheme())
+            docStream = currentActivity.getContentResolver().openInputStream(fUri) # Fails
+            # docStream = currentActivity.getContentResolver().openInputStream(pURI) # Succeeds
         except:
-            Logger.info('***FILE_API30*** : pfd = openFileDescriptor(fUri) THREW ERROR')
+            Logger.info('***FILE_API30*** : docStream = openInputStream(fUri) THREW ERROR')
+            docStream = None
         
-        try:
-            docStream = FileInputStream(pfd.getFileDescriptor())
-        except:
-            Logger.info('***FILE_API30*** : FileInputStream(pfd.getFileDescriptor()) THREW ERROR')
-        
-        docStream = None
         if(docStream != None):
 #           ints = []  # Used for Raw File Reading
             str1 = ''
@@ -246,53 +251,24 @@ def Callback_Read_FilePath(pFName=None):
 ####################################################
 def SFP_Write_Doc(pWCallback=None, pFile=None):
     if(platform == 'android'):
-        Logger.info('***FILE_API30*** : def SFP_Write_Doc()...start')
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         
         #########################################################
         def on_activity_Save(request_code, result_code, intent):
-            Logger.info('***FILE_API30*** : def on_activity_Save()...start')
-            Logger.info('***FILE_API30*** : request_code = %s', str(request_code))
-            Logger.info('***FILE_API30*** : result_code = %s', str(result_code))
             if(request_code != CREATE_FILE):
                 Logger.warning('***FILE_API30*** : on_activity_Save: result that was not RESULT_SAVE_DOC')
                 return
             
-            Logger.info('***FILE_API30*** : Activity.RESULT_CANCELED = %s', str(Activity.RESULT_CANCELED))
             if(result_code == Activity.RESULT_CANCELED):
-                Clock.schedule_once(lambda dt: pWCallback(None), 0)
+                Clock.schedule_once(lambda dt: pWCallback(), 0)
                 return
             
-            Logger.info('***FILE_API30*** : Activity.RESULT_OK = %s', str(Activity.RESULT_OK))
             if result_code != Activity.RESULT_OK:
                 # This may just go into the void...
                 raise NotImplementedError('***FILE_API30*** : Unknown result_code "{}"'.format(result_code))
                 
             selectedUri = intent.getData() # Uri
-            Logger.info('***FILE_API30*** : selectedUri = %s', str(selectedUri))
-            Logger.info('***FILE_API30*** : selectedUri.getPath = %s', str(selectedUri.getPath()))
-            
-            filePathColumn = [MediaStore_Images_Media_DATA] # String
-            Logger.info('***FILE_API30*** : filePathColumn = %s', str(filePathColumn))
-            
-            # Cursor
-            cursor = currentActivity.getContentResolver().query(selectedUri, filePathColumn, None, None, None)
-            Logger.info('***FILE_API30*** : cursor = %s', str(cursor))
-            cursor.moveToFirst()
-            
-            columnIndex = cursor.getColumnIndex(filePathColumn[0])  # int
-            Logger.info('***FILE_API30*** : columnIndex = %s', str(columnIndex))
-            
-            fileName = cursor.getString(columnIndex) # String
-            Logger.info('***FILE_API30*** : on_activity_Load() : selected = %s', str(fileName))
-            
-            cursor.close()
-            
-            Logger.info('***FILE_API30*** : on_activity_Save() selectedUri.getPath() = %s', selectedUri.getPath())
-            
-###            Clock.schedule_once(lambda dt: pWCallback(selectedUri), 0)
-
-            Logger.info('***FILE_API30*** : def on_activity_Save()...end')
+            Clock.schedule_once(lambda dt: pWCallback(selectedUri), 0)
             return
         
         activity.bind(on_activity_result = on_activity_Save)
@@ -300,62 +276,38 @@ def SFP_Write_Doc(pWCallback=None, pFile=None):
         intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.setType('text/plain')
-        intent.putExtra(Intent.EXTRA_TITLE, "File_API30.txt")
         currentActivity.startActivityForResult(intent, CREATE_FILE)
-        Logger.info('***FILE_API30*** : def SFP_Write_Doc()...end')
     return
     
 
 ####################################################
-def Callback_Write(uri):
+def Callback_Write(pURI = None):
+    if(pURI == None):
+        return
     if(platform == 'android'):
-        Logger.info('***FILE_API30*** : def Callback_Write()...start')
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
-        # Just some function that returns binary data from somewhere to write to uri
         
-        bytedata = []
-        Read_BinaryFile(pData = bytedata)
-        if(len(bytedata) > 0):
-            try:
-                # For writing, it is important to get ParcelFileDescriptor from ContentResolver ...
-                pfd = currentActivity.getContentResolver().openFileDescriptor(uri, "w")
-                
-                # ... because from ParcelFileDescriptor you need to use getFileDescriptor() function,
-                # which will allow us to create a FileOutputStream (and not a regular OutputStream), ...
-                fos = FileOutputStream(pfd.getFileDescriptor())
-                
-                # ... because FileOutputStream can access the OutputStream channel,
-                fos_ch = fos.getChannel()
-                
-                # ... so that after writing data to a file ...
-                fos.write(bytedata)
-                
-                # ... this channel was able to cut off extra bytes if the number of newly written bytes was less than in the file being rewritten.
-                fos_ch.truncate(len(bytedata))
-                
-                fos.close()
-                
-                # I save the uri in case of a quick overwrite, so you do not open every time the android file selection window
-                openedUri = uri
-                
-            except:
-                print('Saving bytedata failed.')
-        Logger.info('***FILE_API30*** : def Callback_Write()...end')
-
-
-####################################################
-def Read_BinaryFile(pData = None):
-    if(platform == 'android'):
-        Logger.info('***FILE_API30*** : def Read_BinaryFile()...start')
-        fo = open("loneliness.txt", "rb")
-        if(fo != None):
-            byte = fo.read(1)
-            while(byte):
-                pData.append(byte)
-                byte = fo.read(1)
-            fo.close()
-        Logger.info('***FILE_API30*** : def Read_BinaryFile()...end')
-    return 
+        try:
+            # For writing, it is important to get ParcelFileDescriptor from ContentResolver ...
+            pfd = currentActivity.getContentResolver().openFileDescriptor(pURI, "w")
+            
+            # ... because from ParcelFileDescriptor you need to use getFileDescriptor() function,
+            # which will allow us to create a FileOutputStream (and not a regular OutputStream), ...
+            fos = FileOutputStream(pfd.getFileDescriptor())
+            
+            # ... because FileOutputStream can access the OutputStream channel,
+            fos_ch = fos.getChannel()
+            
+            # ... so that after writing data to a file ...
+            fos.write(String_Data)
+            
+            # ... this channel was able to cut off extra bytes if the number of newly written bytes was less than in the file being rewritten.
+            fos_ch.truncate(len(String_Data))
+            
+            fos.close()
+        except:
+            print('Saving String_Data ERROR THROWN.')
+    return
 
 
 ####################################################
