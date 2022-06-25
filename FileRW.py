@@ -162,15 +162,17 @@ def SFP_Read_Doc(pRCallback=None, pFile=None):
 ####################################################
 def Callback_Read_URI(pURI=None):
     global Global_Label
+    if(Global_Label != None):
+        Global_Label.text = '\nURI = ' + str(pURI.toString) + '\n'
     ################################################
     if( (platform == 'android') and (pURI != None) ):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
-        if(Global_Label != None):
-            Global_Label.text = '\nURI = ' + str(pURI) + '\n'
+        
         try:
             docStream = currentActivity.getContentResolver().openInputStream(pURI)
         except:
             docStream = None
+            
         if(docStream != None):
             ints = []
             intVal = docStream.read()
@@ -193,12 +195,11 @@ def Callback_Read_URI(pURI=None):
 ####################################################
 def Callback_Read_FilePath(pFName=None):
     global Global_Label
+    if(Global_Label != None):
+        Global_Label.text = '\nfilename = ' + str(pFName) + '\n'
     ################################################
     if( (platform == 'android') and (pFName != None) ):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
-
-        if(Global_Label != None):
-            Global_Label.text = '\nfilename = ' + str(pFName) + '\n'
         
         try:
             # I got this string from the command
