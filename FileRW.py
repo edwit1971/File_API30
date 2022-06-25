@@ -24,16 +24,20 @@
 # adb shell ps : show all processes running
 # adb logcat : to get entire logcat
 #
+#
+#############################################
+# The code below was supposed to return the
+# name and path of the selected file but it
+# never did. It kept returning None.
+# no idea why, and I couldn't get it to work
+#############################################
+# filePathColumn = [MediaStore_Images_Media_DATA]; # String[]
+# cursor = currentActivity.getContentResolver().query(selectedUri, filePathColumn, None, None, None)
+# cursor.moveToFirst()
+# columnIndex = cursor.getColumnIndex(filePathColumn[0])
+# fileName = cursor.getString(columnIndex)
+# cursor.close()
 ##############################################################
-
-
-#from pathlib import Path
-#p = Path(pDest)
-#p.as_uri()
-
-import io
-import os
-import json
 
 from kivy.utils import platform
 
@@ -53,8 +57,9 @@ if platform == 'android':
     PythonActivity = autoclass("org.kivy.android.PythonActivity")
     Intent = autoclass('android.content.Intent')
     Uri = autoclass('android.net.Uri')
-    File = autoclass('java.io.File')
     Env = autoclass('android.os.Environment')
+    File = autoclass('java.io.File')
+    FileInputStream = autoclass('java.io.FileOutputStream')
     FileOutputStream = autoclass('java.io.FileOutputStream')
 #    DocumentsContract = autoclass('android.provider.DocumentsContract')
     
@@ -80,27 +85,6 @@ if platform == 'android':
 ####################################################
 
 
-################################################
-################################################
-# From the received Uri I am getting a data stream
-
-#selectedUri = intent.getData()
-#docStream = currentActivity.getContentResolver().openInputStream(selectedUri)
-
-# I get an int array from the stream
-#ints = []
-#intVal = docStream.read()
-
-#while intVal != -1:
-#    ints.append(intVal)
-#    intVal = docStream.read()
-
-# And convert the array to bytes and pass it to the callback function
-#docBytes = bytes(b % 256 for b in ints)
-#Clock.schedule_once(lambda dt: callback(docBytes), 0)
-################################################
-################################################
-
 def Read_File(pFile=None, pLabel=None):
     global Global_Label
     Global_Label = pLabel
@@ -110,7 +94,7 @@ def Read_File(pFile=None, pLabel=None):
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
         # if permissions_granted:   # variant
-            SFP_Read_Doc(pRCallback = Callback_Read, \
+            SFP_Read_Doc(pRCallback = Callback_Read_URI, \
                          pFile = pFile)
         else:
             get_permissions()
@@ -148,7 +132,7 @@ def SFP_Read_Doc(pRCallback=None, pFile=None):
                 return
             
             if result_code == Activity.RESULT_CANCELED:
-                Clock.schedule_once(lambda dt: pRCallback(None), 0)
+                Clock.schedule_once(lambda dt: pRCallback(), 0)
                 return
             
             if result_code != Activity.RESULT_OK:
@@ -156,59 +140,98 @@ def SFP_Read_Doc(pRCallback=None, pFile=None):
                 raise NotImplementedError('***FILE_API30*** : Unknown result_code "{}"'.format(result_code))
 
             selectedUri = intent.getData();  # Uri
-            # str(selectedUri.getScheme())) == 'content'
-                
-            filePathColumn = [MediaStore_Images_Media_DATA]; # String[]
             
-            # Cursor
-            cursor = currentActivity.getContentResolver().query(selectedUri, filePathColumn, None, None, None)
-            cursor.moveToFirst()
+            Clock.schedule_once(lambda dt: pRCallback(pURI=selectedUri), 0)
 
-            # int
-            columnIndex = cursor.getColumnIndex(filePathColumn[0])
-            
-            # fileName = cursor.getString(columnIndex)
-            cursor.close()
-            
-            fileName = 'None'
-            filePaths = selectedUri.getPath()
-            Length = len(filePaths)
-            if( (Length > 1) and (filePaths.find(':') != -1) ):
-                n = filePaths.find(':Download/')
-                if(n != -1):
-                    dwnldPath = Env.getExternalStoragePublicDirectory(Env.DIRECTORY_DOWNLOADS).toString()
-                    fileName = os.path.join(dwnldPath, filePaths[(n+10):Length])
-
-            Clock.schedule_once(lambda dt: pRCallback(fileName), 0)
             return
 
         activity.bind(on_activity_result = on_activity_Load)
-        # intent = Intent(Intent.ACTION_OPEN_DOCUMENT)  # Open the SYSTEM FILE PICKER
         intent = Intent(Intent.ACTION_GET_CONTENT)  # Open the SYSTEM FILE PICKER
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.setType('text/plain')
-        intent.putExtra(Intent.EXTRA_TITLE, "File_API30.txt")
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, False)
-        # intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, initialURI)
         intent.setAction(Intent.ACTION_GET_CONTENT)
         currentActivity.startActivityForResult(intent, RESULT_LOAD_DOC)
     return
 
 
 ####################################################
-def Callback_Read(filename):
+# This Callback function for reading a Text-File
+# reads a text file the user selects with the File
+# Systen Picker and displays it's content
+####################################################
+def Callback_Read_URI(pURI=None):
     global Global_Label
-    if(Global_Label != None):
-        Global_Label.text = '\nfilename = ' + str(filename) + '\n'
-        return
-    if( (filename != None) and (os.path.isfile(filename)) ):
-        if(platform == 'android'):
-            with io.open(filename, encoding='utf-8') as file:
-                data = None
-                try:
-                    data = json.load(file)
-                except:
-                    pass
+    ################################################
+    if( (platform == 'android') and (pURI != None) ):
+        currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
+        if(Global_Label != None):
+            Global_Label.text = '\nURI = ' + str(pURI) + '\n'
+        try:
+            docStream = currentActivity.getContentResolver().openInputStream(pURI)
+        except:
+            docStream = None
+        if(docStream != None):
+            ints = []
+            intVal = docStream.read()
+            while intVal != -1:
+                ints.append(intVal)
+                intVal = docStream.read()
+            docStream.close()
+            # Convert the array to bytes
+            docBytes = bytes(b % 256 for b in ints)
+            Global_Label.text += '\n\n' + str(docBytes)
+        else:
+            Global_Label.text += '\n\n openInputStream Failed'
+    return
+
+
+####################################################
+# This Callback function for reading a Text-File
+# reads a hard-coded file shit.txt in the download
+# folder and displays it's content
+####################################################
+def Callback_Read_FilePath(pFName=None):
+    global Global_Label
+    ################################################
+    if( (platform == 'android') and (pFName != None) ):
+        currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
+
+        if(Global_Label != None):
+            Global_Label.text = '\nfilename = ' + str(pFName) + '\n'
+        
+        try:
+            # I got this string from the command
+            # Logger.info('***FILE_API30*** : pURI.toString = %s', pURI.toString())
+            strContent = 'content://com.android.externalstorage.documents/document/primary%3ADownload%2Fshit.txt'
+            fUri = Uri.parse(strContent)
+        except:
+            Logger.info('***FILE_API30*** : fUri = Uri.parse(strContent) THREW ERROR')
+        
+        try:
+            pfd = currentActivity.getContentResolver().openFileDescriptor(fUri, "r")
+        except:
+            Logger.info('***FILE_API30*** : pfd = openFileDescriptor(fUri) THREW ERROR')
+        
+        try:
+            docStream = FileInputStream(pfd.getFileDescriptor())
+        except:
+            Logger.info('***FILE_API30*** : FileInputStream(pfd.getFileDescriptor()) THREW ERROR')
+        
+        docStream = None
+        if(docStream != None):
+            ints = []
+            intVal = docStream.read()
+            while intVal != -1:
+                ints.append(intVal)
+                intVal = docStream.read()
+            docStream.close()
+            # Convert the array to bytes
+            docBytes = bytes(b % 256 for b in ints)
+            Global_Label.text += '\n\n' + str(docBytes)
+            Logger.info('***FILE_API30*** : docBytes = %s', str(docBytes))
+        else:
+            Global_Label.text += '\n\n openInputStream Failed'
     return
     
 
@@ -343,4 +366,18 @@ String_Data += 'So know by this,\n'
 String_Data += 'that in immensity,\n'
 String_Data += 'there is one lonelier than you.\n\n'
 String_Data += 'by Theodore Sturgeon'
+
+
+# fileName = 'None'
+# filePaths = selectedUri.getPath()
+# Length = len(filePaths)
+# if( (Length > 1) and (filePaths.find(':') != -1) ):
+#     # Extract the filename they selected
+#     n = filePaths.find(':Download/')
+#     if(n != -1):
+#         # Hard-code the path of the file to be the
+#         # internal storage of the Download folder
+#         # with the getExternalStoragePublicDirectory(Env.DIRECTORY_DOWNLOADS).toString()
+#         dwnldPath = Env.getExternalStoragePublicDirectory(Env.DIRECTORY_DOWNLOADS).toString()
+#         fileName = os.path.join(dwnldPath, filePaths[(n+10):Length])
 
