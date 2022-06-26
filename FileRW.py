@@ -171,9 +171,10 @@ def Callback_Read_URI(pURI=None):
         return
     global Global_Label
     if(Global_Label != None):
-        strPath = Extract_Drive_Root_Path(pPath = pURI.getPath())
-        strName = Extract_FileName(pPath = pURI.getPath())
-        Global_Label.text  = 'File Read = ' + strPath + strName
+        strRoot = Extract_Drive_Root_Path(pPath = pURI.getPath())
+        strPath = Extract_Full_Path(pPath = pURI.toString())
+        strName = Extract_FileName(pPath = pURI.toString())
+        Global_Label.text  = 'File Read = ' + strRoot + strPath + strName
     ################################################
     if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
@@ -240,9 +241,13 @@ def Callback_Write_URI(pURI = None):
         return
     global Global_Label
     if(Global_Label != None):
-        strPath = Extract_Drive_Root_Path(pPath = pURI.getPath())
-        strName = Extract_FileName(pPath = pURI.getPath())
-        Global_Label.text  = 'File Written = ' + strPath + strName
+        #Logger.info('***FILE_API30*** : pURI.getPath() = %s', pURI.getPath())
+        #Logger.info('***FILE_API30*** : pURI.toString = %s', pURI.toString())
+        pURI.toString()
+        strRoot = Extract_Drive_Root_Path(pPath = pURI.getPath())
+        strPath = Extract_Full_Path(pPath = pURI.toString())
+        strName = Extract_FileName(pPath = pURI.toString())
+        Global_Label.text  = 'File Written = ' + strRoot + strPath + strName
     if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         
@@ -269,6 +274,8 @@ def Callback_Write_URI(pURI = None):
 
 
 ####################################################
+# starts and ends with '/'
+####################################################
 def Extract_Drive_Root_Path(pPath=''):
     retPath = ''
     p = pPath.find('/document/primary')
@@ -283,19 +290,55 @@ def Extract_Drive_Root_Path(pPath=''):
         else:
             p2 = p1
         if(p2 > p1):
-            strPath = pPath[p1:p2]
-            retPath = '/storage/' + strPath + '/'
+            strRoot = pPath[p1:p2]
+            retPath = '/storage/' + strRoot + '/'
+    return retPath
+
+
+####################################################
+# does NOT start with '/'
+# But does end with '/'
+####################################################
+def Extract_Full_Path(pPath=''):
+    retPath = ''
+    p1 = pPath.find('%3A')
+    if(p1 == -1):
+        retPath = ''
+    else:
+        p2 = pPath.find('%2F')
+        if(p2 == -1):
+            # if not found then there's no sub-Folders
+            retPath = ''
+        else:
+            while(p2 != -1):
+                retPath += pPath[(p1+3):p2] + '/'
+                p1 = p2
+                if( (p1+3) > (len(pPath)-1) ):
+                    # make sure we don't exceed the string length
+                    break;
+                p2 = pPath.find('%2F', (p1+3), (len(pPath)-1))
     return retPath
 
 
 ####################################################
 def Extract_FileName(pPath=''):
     retName = ''
-    if(len(pPath) > 1):
-        strN = pPath[::-1] # Reverse String Order
-        p = strN.find('/')
-        retName = strN[0:p]
-        retName = retName[::-1]
+    p1 = pPath.find('%3A')
+    if(p1 == -1):
+        retName = ''
+    else:
+        p2 = p1
+        while(p2 != -1):
+            p1 = p2
+            if( (p1+3) > (len(pPath)-1) ):
+                # make sure we don't exceed the string length
+                break;
+            p2 = pPath.find('%2F', (p1+3), (len(pPath)-1))
+        # if not found then there's no sub-Folders
+        if( (len(pPath)) > (p1+3) ):
+            retName = pPath[(p1+3):len(pPath)]
+        else:
+            retName = ''
     return retName
 
 
