@@ -171,7 +171,7 @@ def Callback_Read_URI(pURI=None):
         return
     global Global_Label
     if(Global_Label != None):
-        strRoot = Extract_Drive_Root_Path(pPath = pURI.getPath())
+        strRoot = Extract_Root_Path(pPath = pURI.getPath())
         strPath = Extract_Full_Path(pPath = pURI.toString())
         strName = Extract_FileName(pPath = pURI.toString())
         Global_Label.text  = 'File Read = ' + strRoot + strPath + strName
@@ -241,13 +241,15 @@ def Callback_Write_URI(pURI = None):
         return
     global Global_Label
     if(Global_Label != None):
-        #Logger.info('***FILE_API30*** : pURI.getPath() = %s', pURI.getPath())
-        #Logger.info('***FILE_API30*** : pURI.toString = %s', pURI.toString())
-        pURI.toString()
-        strRoot = Extract_Drive_Root_Path(pPath = pURI.getPath())
+        # Logger.info('***FILE_API30*** : pURI.getPath() = %s', pURI.getPath())
+        # Logger.info('***FILE_API30*** : pURI.toString() = %s', pURI.toString())
+        strRoot = Extract_Root_Path(pPath = pURI.getPath())
         strPath = Extract_Full_Path(pPath = pURI.toString())
         strName = Extract_FileName(pPath = pURI.toString())
-        Global_Label.text  = 'File Written = ' + strRoot + strPath + strName
+        str1 = 'pURI.getPath() = ' + str(pURI.getPath()) + '\n\n'
+        str2 = 'pURI.toString() = ' + pURI.toString() + '\n\n'
+        str3 = 'File Written = ' + strRoot + strPath + strName
+        Global_Label.text = str1 + str2 + str3
     if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
         
@@ -274,9 +276,10 @@ def Callback_Write_URI(pURI = None):
 
 
 ####################################################
-# starts and ends with '/'
+# pPath = pURI.getPath()
+# return String starts and ends with '/'
 ####################################################
-def Extract_Drive_Root_Path(pPath=''):
+def Extract_Root_Path(pPath=''):
     retPath = ''
     p = pPath.find('/document/primary')
     if(p != -1):
@@ -296,7 +299,8 @@ def Extract_Drive_Root_Path(pPath=''):
 
 
 ####################################################
-# does NOT start with '/'
+# pPath = pURI.toString()
+# return String does NOT start with '/'
 # But does end with '/'
 ####################################################
 def Extract_Full_Path(pPath=''):
@@ -319,7 +323,9 @@ def Extract_Full_Path(pPath=''):
                 p2 = pPath.find('%2F', (p1+3), (len(pPath)-1))
     return retPath
 
-
+####################################################
+# pPath = pURI.toString()
+# return String has no '/'
 ####################################################
 def Extract_FileName(pPath=''):
     retName = ''
