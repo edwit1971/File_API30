@@ -44,6 +44,16 @@ from kivy.utils import platform
 
 Global_Label = None
 
+String_Data  = 'There is in certain living souls,\n'
+String_Data += 'a quality of loneliness unspeakable,\n'
+String_Data += 'so great it must be shared,\n'
+String_Data += 'as company is shared by lesser beings,\n'
+String_Data += 'such a loneliness is mine.\n'
+String_Data += 'So know by this,\n'
+String_Data += 'that in immensity,\n'
+String_Data += 'there is one lonelier than you.\n\n'
+String_Data += 'by Theodore Sturgeon'
+
 ####################################################
 ####################################################
 if platform == 'android':
@@ -93,7 +103,6 @@ def Read_File(pLabel=None):
         if check_permission("android.permission.WRITE_EXTERNAL_STORAGE") \
         and check_permission("android.permission.READ_EXTERNAL_STORAGE") \
         and check_permission("android.permission.INTERNET"):
-            #SFP_Read_Doc(pRCallback = Callback_Read_FilePath)
             SFP_Read_Doc(pRCallback = Callback_Read_URI)
         else:
             get_permissions()
@@ -162,7 +171,9 @@ def Callback_Read_URI(pURI=None):
         return
     global Global_Label
     if(Global_Label != None):
-        Global_Label.text = '\nURI = ' + str(pURI.toString()) + '\n'
+        strPath = Extract_Drive_Root_Path(pPath = pURI.getPath())
+        strName = Extract_FileName(pPath = pURI.getPath())
+        Global_Label.text  = 'File Read = ' + strPath + strName
     ################################################
     if(platform == 'android'):
         currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
@@ -185,6 +196,126 @@ def Callback_Read_URI(pURI=None):
         else:
             Global_Label.text += '\n\n openInputStream Failed'
     return
+
+
+####################################################
+# Open the SYSTEM FILE PICKER and call callback with
+# absolute filepath of document to save.
+# None if user canceled.
+####################################################
+def SFP_Write_Doc(pWCallback=None):
+    if(platform == 'android'):
+        currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
+        
+        #########################################################
+        def on_activity_Save(request_code, result_code, intent):
+            if(request_code != CREATE_FILE):
+                Logger.warning('***FILE_API30*** : on_activity_Save: result that was not RESULT_SAVE_DOC')
+                return
+            
+            if(result_code == Activity.RESULT_CANCELED):
+                Clock.schedule_once(lambda dt: pWCallback(), 0)
+                return
+            
+            if result_code != Activity.RESULT_OK:
+                # This may just go into the void...
+                raise NotImplementedError('***FILE_API30*** : Unknown result_code "{}"'.format(result_code))
+                
+            selectedUri = intent.getData() # Uri
+            Clock.schedule_once(lambda dt: pWCallback(selectedUri), 0)
+            return
+        
+        activity.bind(on_activity_result = on_activity_Save)
+        # Here's another Intent in contrast to get the file
+        intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        intent.setType('text/plain')
+        currentActivity.startActivityForResult(intent, CREATE_FILE)
+    return
+    
+
+####################################################
+def Callback_Write_URI(pURI = None):
+    if(pURI == None):
+        return
+    global Global_Label
+    if(Global_Label != None):
+        strPath = Extract_Drive_Root_Path(pPath = pURI.getPath())
+        strName = Extract_FileName(pPath = pURI.getPath())
+        Global_Label.text  = 'File Written = ' + strPath + strName
+    if(platform == 'android'):
+        currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
+        
+        try:
+            docStream = currentActivity.getContentResolver().openOutputStream(pURI)
+        except:
+            docStream = None
+            
+        if(docStream != None):
+            try:
+                ints = []
+                # Convert String Data to BYTE data
+                for n in range(0, len(String_Data)):
+                    intVal = ord(String_Data[n])
+                    ints.append(intVal)
+                docStream.write(ints, 0, len(ints))
+                docStream.close()
+            except:
+                Logger.warning('***FILE_API30*** : docStream.write(ints, 0, len(ints)) THREW ERROR!!!')
+            Global_Label.text += '\n\n File Written'
+        else:
+            Global_Label.text = '\n\n openOutputStream Failed'
+    return
+
+
+####################################################
+def Extract_Drive_Root_Path(pPath=''):
+    retPath = ''
+    p = pPath.find('/document/primary')
+    if(p != -1):
+        retPath = Get_Internal_Path() + '/'
+    else:
+        p1 = pPath.find('/document/')
+        p1 = p1 + 10
+        p2 = pPath.find(':')
+        if(p2 > 0):
+            p2 = p2 - 1
+        else:
+            p2 = p1
+        if(p2 > p1):
+            strPath = pPath[p1:p2]
+            retPath = '/storage/' + strPath + '/'
+    return retPath
+
+
+####################################################
+def Extract_FileName(pPath=''):
+    retName = ''
+    if(len(pPath) > 1):
+        strN = pPath[::-1] # Reverse String Order
+        p = strN.find('/')
+        retName = strN[0:p]
+        retName = retName[::-1]
+    return retName
+
+
+####################################################
+def Get_Internal_Path():
+    ret = ''
+    if(platform == 'android'):
+        try:
+            # ret = Env.getExternalStoragePublicDirectory(Env.DIRECTORY_DOWNLOADS).toString() # This works too
+            # from android.storage import primary_external_storage_path
+            # ret = primary_external_storage_path() # This works too
+            ret = Env.getExternalStorageDirectory().toString()
+        except:
+            ret = ''
+    return ret
+
+
+####################################################
+####################################################
+
 
 
 ####################################################
@@ -237,98 +368,5 @@ def Callback_Read_FilePath(pURI=None):
         else:
             Global_Label.text += '\n\n openInputStream Failed'
     return
-    
 
-####################################################
-# Open the SYSTEM FILE PICKER and call callback with
-# absolute filepath of document to save.
-# None if user canceled.
-####################################################
-def SFP_Write_Doc(pWCallback=None):
-    if(platform == 'android'):
-        currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
-        
-        #########################################################
-        def on_activity_Save(request_code, result_code, intent):
-            if(request_code != CREATE_FILE):
-                Logger.warning('***FILE_API30*** : on_activity_Save: result that was not RESULT_SAVE_DOC')
-                return
-            
-            if(result_code == Activity.RESULT_CANCELED):
-                Clock.schedule_once(lambda dt: pWCallback(), 0)
-                return
-            
-            if result_code != Activity.RESULT_OK:
-                # This may just go into the void...
-                raise NotImplementedError('***FILE_API30*** : Unknown result_code "{}"'.format(result_code))
-                
-            selectedUri = intent.getData() # Uri
-            Clock.schedule_once(lambda dt: pWCallback(selectedUri), 0)
-            return
-        
-        activity.bind(on_activity_result = on_activity_Save)
-        # Here's another Intent in contrast to get the file
-        intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
-        intent.addCategory(Intent.CATEGORY_OPENABLE)
-        intent.setType('text/plain')
-        currentActivity.startActivityForResult(intent, CREATE_FILE)
-    return
-    
-
-####################################################
-def Callback_Write_URI(pURI = None):
-    if(pURI == None):
-        return
-    global Global_Label
-    if(platform == 'android'):
-        currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
-        
-        try:
-            docStream = currentActivity.getContentResolver().openOutputStream(pURI)
-        except:
-            docStream = None
-            
-        if(docStream != None):
-            try:
-                ints = []
-                # Convert String Data to BYTE data
-                for n in range(0, len(String_Data)):
-                    intVal = ord(String_Data[n])
-                    ints.append(intVal)
-                docStream.write(ints, 0, len(ints))
-                docStream.close()
-            except:
-                Logger.warning('***FILE_API30*** : docStream.write(ints, 0, len(ints)) THREW ERROR!!!')
-            Global_Label.text  = 'Path = ' + str(pURI.getPath())
-            Global_Label.text += '\n\n File Written'
-        else:
-            Global_Label.text = '\n\n openOutputStream Failed'
-    return
-
-
-def Get_Internal_Path():
-    ret = ''
-    if(platform == 'android'):
-        try:
-            # ret = Env.getExternalStoragePublicDirectory(Env.DIRECTORY_DOWNLOADS).toString() # This works too
-            # from android.storage import primary_external_storage_path
-            # ret = primary_external_storage_path() # This works too
-            ret = Env.getExternalStorageDirectory()
-        except:
-            ret = ''
-    return ret
-
-
-####################################################
-####################################################
-
-String_Data  = 'There is in certain living souls,\n'
-String_Data += 'a quality of loneliness unspeakable,\n'
-String_Data += 'so great it must be shared,\n'
-String_Data += 'as company is shared by lesser beings,\n'
-String_Data += 'such a loneliness is mine.\n'
-String_Data += 'So know by this,\n'
-String_Data += 'that in immensity,\n'
-String_Data += 'there is one lonelier than you.\n\n'
-String_Data += 'by Theodore Sturgeon'
 
