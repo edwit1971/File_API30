@@ -70,7 +70,7 @@ if platform == 'android':
     Uri = autoclass('android.net.Uri')
     Env = autoclass('android.os.Environment')
     File = autoclass('java.io.File')
-    FileInputStream = autoclass('java.io.FileOutputStream')
+    FileInputStream = autoclass('java.io.FileInputStream')
     FileOutputStream = autoclass('java.io.FileOutputStream')
 #    DocumentsContract = autoclass('android.provider.DocumentsContract')
     
